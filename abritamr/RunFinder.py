@@ -51,28 +51,44 @@ class RunFinder(object):
     
     def _check_amrfinder(self):
         """
-        Check that amrfinder is installed and db setup properly.
+        Check that amrfinder is installed and that a database is available.This does NOT enforce an exact DB version, only reports what is found.
         """
-        ok = False
-        self.logger.info(f"Checking for amrfinder DB: {self.amrfinder_db} and comparing it to {self.db}")
-        if self.amrfinder_db == '' or self.amrfinder_db == None:
-            self.logger.warning(f"It seems you don't have the AMRFINDER_DB variable set. Now checking AMRfinder setup. Please note if the AMRFinder DB is not v {self.db} this may cause errors")
-            cmd = f"amrfinder --help"
-            pat = re.compile(r'(?P<id>[0-9]{4}-[0-9]{5,6})-?(?P<itemcode>.{1,2})?')
-            p = subprocess.run(cmd, shell = True, encoding = "utf-8", capture_output = True)
-            m = re.search(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', p.stderr)
-            
-            if m:
-                ok = True
-            else:
-                ok = False
-        elif self.db in self.amrfinder_db:
-            self.logger.info(f"You seem to have the correct AMRfinder DB setup. Well done!")
-            ok = True
-        
-        return ok
+        self.logger.info(f"Checking AMRFinderPlus setup (expected DB ~ {self.db})")
+        cmd = "amrfinder -V"
+        p = subprocess.run(
+            cmd,
+            shell=True,
+            encoding="utf-8",
+            capture_output=True
+        )
 
-            
+        if p.returncode != 0:
+        self.logger.error(
+            "AMRFinderPlus does not appear to be installed or runnable.\n"
+            f"stderr:\n{p.stderr}"
+            )
+            return False
+
+        output = p.stdout.strip()
+        self.logger.info(f"Detected AMRFinderPlus:\n{output}")
+
+        # Extract database version if present
+        m = re.search(r'Database version\s+([0-9]{4}-[0-9]{2}-[0-9]{2}\.\d+)', output)
+        if m:
+            detected_db = m.group(1)
+            self.logger.info(f"Detected AMRFinderPlus database version: {detected_db}")
+
+            if self.db and self.db not in detected_db:
+                self.logger.warning(
+                    f"AMRFinderPlus DB version ({detected_db}) does not match "
+                    f"expected version ({self.db}). Proceeding anyway."
+                )
+        else:
+            self.logger.warning(
+                "Could not detect AMRFinderPlus database version from `amrfinder -V` output."
+            )
+
+    return True
 
 
     def _generate_cmd(self):
