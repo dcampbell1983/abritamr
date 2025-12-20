@@ -13,7 +13,11 @@ class Collate:
     
     ANNOTATIONS = {'blast':'*','partial':'^','exact':''}
     REFGENES = pathlib.Path(__file__).parent / "db" / "refgenes_latest.csv"
-    MATCH = ["ALLELEX", "BLASTX", "EXACTX", "POINTX"]
+    MATCH = [
+    "ALLELEX", "BLASTX", "EXACTX", "POINTX",  # v3 style
+    "ALLELEP", "BLASTP", "EXACTP", "POINTP",  # v4 protein style
+    "ALLELEN", "BLASTN", "EXACTN", "POINTN",  # v4 nucleotide style (POINTN is also used below)
+    ]
 
     def __init__(self, args):
         self.logger =logging.getLogger(__name__) 
