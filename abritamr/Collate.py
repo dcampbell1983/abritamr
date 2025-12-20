@@ -293,7 +293,7 @@ class Collate:
         reftab = self._get_reftab()
         
         df = pandas.read_csv(f"{prefix}/amrfinder.out", sep="\t")
-        df = self._normalise_amrfinder_columns(df_
+        df = self._normalise_amrfinder_columns(df)
         self.logger.info(f"Opened amrfinder output for {prefix}")
         drug, partial, virulence = self.get_per_isolate(
             reftab=reftab, df=df, isolate=prefix
