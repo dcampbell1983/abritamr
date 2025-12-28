@@ -13,7 +13,11 @@ class Collate:
     
     ANNOTATIONS = {'blast':'*','partial':'^','exact':''}
     REFGENES = pathlib.Path(__file__).parent / "db" / "refgenes_latest.csv"
-    MATCH = ["ALLELEX", "BLASTX", "EXACTX", "POINTX"]
+    MATCH = [
+    "ALLELEX", "BLASTX", "EXACTX", "POINTX",  # v3 style
+    "ALLELEP", "BLASTP", "EXACTP", "POINTP",  # v4 protein style
+    "ALLELEN", "BLASTN", "EXACTN", "POINTN",  # v4 nucleotide style (POINTN is also used below)
+    ]
 
     def __init__(self, args):
         self.logger =logging.getLogger(__name__) 
@@ -30,7 +34,37 @@ class Collate:
         self.prefix = args.prefix
         self.run_type = args.run_type
         self.input = args.input
+    def _normalise_amrfinder_columns(self, df):
+        """
+        Normalise AMRFinderPlus v4.x output columns to match v3.x names used by abritamr.
+        v4.x uses: Element symbol, Type, Subtype, Closest reference accession
+        v3.x uses: Gene symbol, Element type, Element subtype, Accession of closest sequence
+        """
 
+        if "Gene symbol" not in df.columns and "Element symbol" in df.columns:
+            df["Gene symbol"] = df["Element symbol"]
+
+        if "Element type" not in df.columns and "Type" in df.columns:
+            df["Element type"] = df["Type"]
+
+        if "Element subtype" not in df.columns and "Subtype" in df.columns:
+            df["Element subtype"] = df["Subtype"]
+
+        if (
+            "Accession of closest sequence" not in df.columns
+            and "Closest reference accession" in df.columns
+        ):
+            df["Accession of closest sequence"] = df["Closest reference accession"]
+
+        required = ["Gene symbol", "Element type", "Element subtype", "Method"]
+        missing = [c for c in required if c not in df.columns]
+        if missing:
+            raise ValueError(
+                f"AMRFinderPlus output missing required columns after normalisation: {missing}. "
+                f"Columns present: {list(df.columns)}"
+            )
+
+        return df
     def joins(self, dict_for_joining):
         """
         make them a comma separated list
@@ -259,6 +293,7 @@ class Collate:
         reftab = self._get_reftab()
         
         df = pandas.read_csv(f"{prefix}/amrfinder.out", sep="\t")
+        df = self._normalise_amrfinder_columns(df)
         self.logger.info(f"Opened amrfinder output for {prefix}")
         drug, partial, virulence = self.get_per_isolate(
             reftab=reftab, df=df, isolate=prefix
