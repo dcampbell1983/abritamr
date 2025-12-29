@@ -63,9 +63,9 @@ class RunFinder(object):
         )
 
         if p.returncode != 0:
-        self.logger.error(
-            "AMRFinderPlus does not appear to be installed or runnable.\n"
-            f"stderr:\n{p.stderr}"
+            self.logger.error(
+                "AMRFinderPlus does not appear to be installed or runnable.\n"
+                f"stderr:\n{p.stderr}"
             )
             return False
 
