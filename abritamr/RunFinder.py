@@ -88,7 +88,7 @@ class RunFinder(object):
                 "Could not detect AMRFinderPlus database version from `amrfinder -V` output."
             )
 
-    return True
+        return True
 
 
     def _generate_cmd(self):
